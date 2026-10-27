@@ -69,7 +69,7 @@ const getStyleSheet = makeStyleSheetFromTheme((theme: Theme) => ({
 
 const ImageFile = ({
     backgroundColor, file, forwardRef, inViewPort, isSingleImage,
-    contentFit = 'cover', wrapperWidth, testID,
+    contentFit = isSingleImage ? 'contain' : 'cover', wrapperWidth, testID,
 }: ImageFileProps) => {
     const dimensions = useWindowDimensions();
     const theme = useTheme();

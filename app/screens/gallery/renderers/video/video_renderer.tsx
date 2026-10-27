@@ -16,6 +16,8 @@ import {getTranscriptionUri, hasCaptions} from '@calls/utils';
 import {Events} from '@constants';
 import {ANDROID_VIDEO_INSET, GALLERY_FOOTER_HEIGHT, VIDEO_INSET} from '@constants/gallery';
 import {useServerUrl} from '@context/server';
+import {getServerCredentials} from '@init/credentials';
+import NetworkManager from '@managers/network_manager';
 import SecurityManager from '@managers/security_manager';
 import {transformerTimingConfig} from '@screens/gallery/animation_config/timing';
 import DownloadWithAction from '@screens/gallery/footer/download_with_action';
@@ -46,6 +48,25 @@ const styles = StyleSheet.create({
     },
 });
 
+function shouldAttachServerAuthHeaders(uri: string | undefined, serverUrl: string) {
+    if (!uri) {
+        return false;
+    }
+
+    try {
+        const requestUrl = new URL(uri);
+        const serverBaseUrl = new URL(serverUrl);
+
+        if (requestUrl.origin !== serverBaseUrl.origin) {
+            return false;
+        }
+
+        return requestUrl.pathname.startsWith('/api/v4/');
+    } catch {
+        return false;
+    }
+}
+
 const VideoRenderer = ({canDownloadFiles, enableSecureFilePreview, height, index, initialIndex, item, isPageActive, hideHeaderAndFooter, width}: VideoRendererProps) => {
     const {headerAndFooterHidden} = useLightboxSharedValues();
     const {bottom} = useSafeAreaInsets();
@@ -73,7 +94,37 @@ const VideoRenderer = ({canDownloadFiles, enableSecureFilePreview, height, index
     const headerAndFooterHiddenValue = useStateFromSharedValue(headerAndFooterHidden, false);
 
     const {tracks, selected} = useMemo(() => getTranscriptionUri(serverUrl, item.postProps), [serverUrl, item.postProps]);
-    const source: ReactVideoSource = useMemo(() => ({uri: videoUri, textTracks: tracks}), [videoUri, tracks]);
+    const [authToken, setAuthToken] = useState<string | undefined>(() => {
+        try {
+            const client = NetworkManager.getClient(serverUrl);
+            const headers = client.getRequestHeaders('GET');
+            return headers?.Authorization;
+        } catch {
+            return undefined;
+        }
+    });
+
+    useEffect(() => {
+        if (!authToken && serverUrl) {
+            getServerCredentials(serverUrl).then((cred) => {
+                if (cred?.token) {
+                    setAuthToken(`Bearer ${cred.token}`);
+                }
+            }).catch(() => {
+                // Silently ignore credentials error
+            });
+        }
+    }, [serverUrl, authToken]);
+
+    const source: ReactVideoSource = useMemo(() => {
+        const shouldAttach = shouldAttachServerAuthHeaders(videoUri, serverUrl);
+        const headers = shouldAttach && authToken ? {Authorization: authToken} : undefined;
+        return {
+            uri: videoUri,
+            headers,
+            textTracks: tracks,
+        };
+    }, [videoUri, tracks, authToken, serverUrl]);
     const poster: ReactVideoPoster = useMemo(() => ({
         source: {uri: item.posterUri},
         resizeMode: 'contain',

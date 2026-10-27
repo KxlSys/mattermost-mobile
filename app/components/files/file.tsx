@@ -165,7 +165,7 @@ const File = ({
                         forwardRef={ref}
                         inViewPort={inViewPort}
                         isSingleImage={isSingleImage}
-                        contentFit={'cover'}
+                        contentFit={isSingleImage ? 'contain' : 'cover'}
                         wrapperWidth={wrapperWidth}
                         updateFileForGallery={updateFileForGallery}
                         index={index}
@@ -193,7 +193,7 @@ const File = ({
                         forwardRef={ref}
                         inViewPort={inViewPort}
                         isSingleImage={isSingleImage}
-                        contentFit={'cover'}
+                        contentFit={isSingleImage ? 'contain' : 'cover'}
                         wrapperWidth={wrapperWidth}
                         testID={`${file.id}-file`}
                     />

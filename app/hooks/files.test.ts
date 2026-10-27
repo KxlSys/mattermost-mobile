@@ -66,7 +66,7 @@ describe('useImageAttachments', () => {
         jest.mocked(isImage).mockImplementation((file) => file?.id === '1');
         jest.mocked(isVideo).mockImplementation((file) => file?.id === '2');
         jest.mocked(isGif).mockReturnValue(false);
-        jest.mocked(buildFilePreviewUrl).mockImplementation((url, id) => `${url}/preview/${id}`);
+        jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/file/${id}`);
         jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/file/${id}`);
 
         const {result} = renderHook(() => useImageAttachments(filesInfo));
@@ -81,7 +81,7 @@ describe('useImageAttachments', () => {
         ]);
     });
 
-    it('should use preview URL for images without localPath', () => {
+    it('should use original file URL for images without localPath for high resolution gallery view', () => {
         const filesInfo = [
             TestHelper.fakeFileInfo({id: '1', localPath: '', uri: `${serverUrl}/files/image1`}),
         ];
@@ -89,12 +89,12 @@ describe('useImageAttachments', () => {
         jest.mocked(isImage).mockReturnValue(true);
         jest.mocked(isVideo).mockReturnValue(false);
         jest.mocked(isGif).mockReturnValue(false);
-        jest.mocked(buildFilePreviewUrl).mockImplementation((url, id) => `${url}/preview/${id}`);
+        jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/file/${id}`);
 
         const {result} = renderHook(() => useImageAttachments(filesInfo));
 
         expect(result.current.images).toEqual([
-            TestHelper.fakeFileInfo({id: '1', localPath: '', uri: 'https://example.com/preview/1'}),
+            TestHelper.fakeFileInfo({id: '1', localPath: '', uri: 'https://example.com/file/1'}),
         ]);
     });
 
@@ -126,7 +126,7 @@ describe('useImageAttachments', () => {
         jest.mocked(isImage).mockImplementation((file) => file?.id === '1');
         jest.mocked(isVideo).mockImplementation((file) => file?.id === '2');
         jest.mocked(isGif).mockReturnValue(false);
-        jest.mocked(buildFilePreviewUrl).mockImplementation((url, id) => `${url}/preview/${id}`);
+        jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/file/${id}`);
         jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/file/${id}`);
 
         const {result, rerender} = renderHook(() => useImageAttachments(filesInfo));
@@ -158,7 +158,7 @@ describe('useImageAttachments', () => {
         jest.mocked(isImage).mockReturnValue(true);
         jest.mocked(isVideo).mockReturnValue(false);
         jest.mocked(isGif).mockReturnValue(false);
-        jest.mocked(buildFilePreviewUrl).mockImplementation((url, id) => `${url}/preview/${id}`);
+        jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/file/${id}`);
 
         const {result} = renderHook(() => useImageAttachments(filesInfo));
 
