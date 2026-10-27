@@ -94,21 +94,25 @@ const VideoRenderer = ({canDownloadFiles, enableSecureFilePreview, height, index
     const headerAndFooterHiddenValue = useStateFromSharedValue(headerAndFooterHidden, false);
 
     const {tracks, selected} = useMemo(() => getTranscriptionUri(serverUrl, item.postProps), [serverUrl, item.postProps]);
-    const [authToken, setAuthToken] = useState<string | undefined>(() => {
+    const [fallbackToken, setFallbackToken] = useState<string | undefined>();
+    const authToken = useMemo(() => {
         try {
             const client = NetworkManager.getClient(serverUrl);
             const headers = client.getRequestHeaders('GET');
-            return headers?.Authorization;
+            if (headers?.Authorization) {
+                return headers.Authorization;
+            }
         } catch {
-            return undefined;
+            // Client may not be registered yet
         }
-    });
+        return fallbackToken;
+    }, [serverUrl, fallbackToken]);
 
     useEffect(() => {
         if (!authToken && serverUrl) {
             getServerCredentials(serverUrl).then((cred) => {
                 if (cred?.token) {
-                    setAuthToken(`Bearer ${cred.token}`);
+                    setFallbackToken(`Bearer ${cred.token}`);
                 }
             }).catch(() => {
                 // Silently ignore credentials error

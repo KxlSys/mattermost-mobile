@@ -8,13 +8,13 @@ import {Platform, StatusBar, type StatusBarStyle} from 'react-native';
 import tinyColor from 'tinycolor2';
 
 import {getLocalFileInfo} from '@actions/local/file';
-import {buildFileUrl, downloadFile} from '@actions/remote/file';
+import {buildFilePreviewUrl, buildFileUrl, downloadFile} from '@actions/remote/file';
 import {useServerUrl} from '@context/server';
 import {useTheme} from '@context/theme';
 import EphemeralStore from '@store/ephemeral_store';
 import {alertDownloadFailed, alertFailedToOpenDocument, alertOnlyPDFSupported} from '@utils/document';
 import {getFullErrorMessage, isErrorWithMessage} from '@utils/errors';
-import {deleteFile, fileExists, getLocalFilePathFromFile, isAudio, isImage, isPdf, isVideo} from '@utils/file';
+import {deleteFile, fileExists, getLocalFilePathFromFile, isAudio, isGif, isImage, isPdf, isVideo} from '@utils/file';
 import {getImageSize} from '@utils/gallery';
 import {logDebug} from '@utils/log';
 import {previewPdf} from '@utils/navigation';
@@ -37,7 +37,7 @@ const getFileInfo = async (serverUrl: string, bookmarks: ChannelBookmarkModel[],
                     if (fileInfo.localPath) {
                         uri = fileInfo.localPath;
                     } else {
-                        uri = buildFileUrl(serverUrl, fileInfo.id!);
+                        uri = (isGif(fileInfo) || (imageFile && !fileInfo.has_preview_image) || videoFile) ? buildFileUrl(serverUrl, fileInfo.id!) : buildFilePreviewUrl(serverUrl, fileInfo.id!);
                     }
                 } else {
                     uri = fileInfo.localPath || buildFileUrl(serverUrl, fileInfo.id!);
