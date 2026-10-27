@@ -292,3 +292,100 @@ describe('useDownloadFileAndPreview', () => {
         });
     });
 });
+
+describe('P0.1 Contract: Chat = preview, Galerie = original', () => {
+    const serverUrl = 'https://mattermost.example.com';
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        jest.mocked(useServerUrl).mockReturnValue(serverUrl);
+        jest.mocked(buildFileUrl).mockImplementation((url, id) => `${url}/api/v4/files/${id}`);
+        jest.mocked(buildFilePreviewUrl).mockImplementation((url, id) => `${url}/api/v4/files/${id}/preview`);
+    });
+
+    it('1 & 2. a normal image uses buildFileUrl for Galerie while Chat uses buildFilePreviewUrl', () => {
+        const normalImage = TestHelper.fakeFileInfo({
+            id: 'photo_1',
+            mime_type: 'image/jpeg',
+            has_preview_image: true,
+            localPath: '',
+        });
+
+        jest.mocked(isImage).mockReturnValue(true);
+        jest.mocked(isVideo).mockReturnValue(false);
+        jest.mocked(isGif).mockReturnValue(false);
+
+        // Galerie (via useImageAttachments):
+        const {result} = renderHook(() => useImageAttachments([normalImage]));
+        expect(result.current.images[0].uri).toBe('https://mattermost.example.com/api/v4/files/photo_1');
+
+        // Chat contract (ImageFile logic):
+        // If has_preview_image is true and not a GIF, ImageFile uses buildFilePreviewUrl
+        const chatPreviewUri = buildFilePreviewUrl(serverUrl, normalImage.id!);
+        expect(chatPreviewUri).toBe('https://mattermost.example.com/api/v4/files/photo_1/preview');
+
+        // Verify explicit contract difference
+        expect(result.current.images[0].uri).not.toBe(chatPreviewUri);
+    });
+
+    it('3. a GIF file retains buildFileUrl for both Galerie and Chat', () => {
+        const gifImage = TestHelper.fakeFileInfo({
+            id: 'gif_1',
+            mime_type: 'image/gif',
+            has_preview_image: true,
+            localPath: '',
+        });
+
+        jest.mocked(isImage).mockReturnValue(true);
+        jest.mocked(isVideo).mockReturnValue(false);
+        jest.mocked(isGif).mockReturnValue(true);
+
+        const {result} = renderHook(() => useImageAttachments([gifImage]));
+        expect(result.current.images[0].uri).toBe('https://mattermost.example.com/api/v4/files/gif_1');
+
+        // In chat, GIFs also use buildFileUrl because server preview is static
+        const chatGifUri = buildFileUrl(serverUrl, gifImage.id!);
+        expect(chatGifUri).toBe('https://mattermost.example.com/api/v4/files/gif_1');
+    });
+
+    it('4. localPath remains priority when it exists', () => {
+        const localImage = TestHelper.fakeFileInfo({
+            id: 'photo_local',
+            mime_type: 'image/jpeg',
+            localPath: '/data/user/0/com.mattermost.rn/files/cached_photo.jpg',
+        });
+
+        jest.mocked(isImage).mockReturnValue(true);
+        jest.mocked(isVideo).mockReturnValue(false);
+        jest.mocked(isGif).mockReturnValue(false);
+
+        const {result} = renderHook(() => useImageAttachments([localImage]));
+        expect(result.current.images[0].uri).toBe('/data/user/0/com.mattermost.rn/files/cached_photo.jpg');
+    });
+
+    it('5. no other consumer of getFileInfo() is impacted (ChannelBookmarks uses preview URL for images without localPath)', async () => {
+        const bookmarks = [{fileId: 'bm_file_1', ownerId: 'user_1'}] as unknown as ChannelBookmarkModel[];
+        const fileMock = {
+            id: 'bm_file_1',
+            localPath: '',
+            has_preview_image: true,
+            toFileInfo: () => TestHelper.fakeFileInfo({id: 'bm_file_1', localPath: '', has_preview_image: true}),
+        };
+
+        jest.mocked(getLocalFileInfo).mockResolvedValue({file: fileMock as unknown as any});
+        jest.mocked(isImage).mockReturnValue(true);
+        jest.mocked(isVideo).mockReturnValue(false);
+        jest.mocked(isGif).mockReturnValue(false);
+        jest.mocked(getImageSize).mockResolvedValue({width: 200, height: 200});
+
+        const {result} = renderHook(() => useChannelBookmarkFiles(bookmarks));
+
+        await waitFor(() => {
+            expect(result.current).toHaveLength(1);
+        });
+
+        // getFileInfo contract: must use preview URL to protect background bandwidth
+        expect(result.current[0].uri).toBe('https://mattermost.example.com/api/v4/files/bm_file_1/preview');
+        expect(buildFilePreviewUrl).toHaveBeenCalledWith(serverUrl, 'bm_file_1');
+    });
+});

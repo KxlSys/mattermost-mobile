@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     },
 });
 
-function shouldAttachServerAuthHeaders(uri: string | undefined, serverUrl: string) {
+export function shouldAttachServerAuthHeaders(uri: string | undefined, serverUrl: string) {
     if (!uri) {
         return false;
     }
@@ -65,6 +65,21 @@ function shouldAttachServerAuthHeaders(uri: string | undefined, serverUrl: strin
     } catch {
         return false;
     }
+}
+
+export function getVideoSource(
+    videoUri: string,
+    serverUrl: string,
+    tracks?: ReactVideoSource['textTracks'],
+    authToken?: string,
+): ReactVideoSource {
+    const shouldAttach = shouldAttachServerAuthHeaders(videoUri, serverUrl);
+    const headers = shouldAttach && authToken ? {Authorization: authToken} : undefined;
+    return {
+        uri: videoUri,
+        headers,
+        textTracks: tracks,
+    };
 }
 
 const VideoRenderer = ({canDownloadFiles, enableSecureFilePreview, height, index, initialIndex, item, isPageActive, hideHeaderAndFooter, width}: VideoRendererProps) => {
@@ -95,21 +110,28 @@ const VideoRenderer = ({canDownloadFiles, enableSecureFilePreview, height, index
 
     const {tracks, selected} = useMemo(() => getTranscriptionUri(serverUrl, item.postProps), [serverUrl, item.postProps]);
     const [fallbackToken, setFallbackToken] = useState<string | undefined>();
-    const authToken = useMemo(() => {
+    const [clientToken, setClientToken] = useState<string | undefined>(() => {
         try {
             const client = NetworkManager.getClient(serverUrl);
-            const headers = client.getRequestHeaders('GET');
-            if (headers?.Authorization) {
-                return headers.Authorization;
-            }
+            return client.getRequestHeaders('GET')?.Authorization;
         } catch {
-            // Client may not be registered yet
+            return undefined;
         }
-        return fallbackToken;
-    }, [serverUrl, fallbackToken]);
+    });
+
+    try {
+        const currentHeaderToken = NetworkManager.getClient(serverUrl).getRequestHeaders('GET')?.Authorization;
+        if (currentHeaderToken && currentHeaderToken !== clientToken) {
+            setClientToken(currentHeaderToken);
+        }
+    } catch {
+        // Client not available yet
+    }
+
+    const effectiveToken = clientToken || fallbackToken;
 
     useEffect(() => {
-        if (!authToken && serverUrl) {
+        if (!effectiveToken && serverUrl) {
             getServerCredentials(serverUrl).then((cred) => {
                 if (cred?.token) {
                     setFallbackToken(`Bearer ${cred.token}`);
@@ -118,17 +140,11 @@ const VideoRenderer = ({canDownloadFiles, enableSecureFilePreview, height, index
                 // Silently ignore credentials error
             });
         }
-    }, [serverUrl, authToken]);
+    }, [serverUrl, effectiveToken]);
 
     const source: ReactVideoSource = useMemo(() => {
-        const shouldAttach = shouldAttachServerAuthHeaders(videoUri, serverUrl);
-        const headers = shouldAttach && authToken ? {Authorization: authToken} : undefined;
-        return {
-            uri: videoUri,
-            headers,
-            textTracks: tracks,
-        };
-    }, [videoUri, tracks, authToken, serverUrl]);
+        return getVideoSource(videoUri, serverUrl, tracks, effectiveToken);
+    }, [videoUri, tracks, effectiveToken, serverUrl]);
     const poster: ReactVideoPoster = useMemo(() => ({
         source: {uri: item.posterUri},
         resizeMode: 'contain',
