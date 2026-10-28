@@ -1,6 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
@@ -16,6 +17,14 @@ const ATTRIBUTION_KEYS = new Set(['settings.notice_text', 'settings.about.powere
 const PNG_COLOR_TYPE_RGB = 2;
 const PNG_COLOR_TYPE_PALETTE = 3;
 const PNG_COLOR_TYPE_RGBA = 6;
+
+// CallKit template icon shipped by the calls-native library (outside assets/override)
+const CALLKIT_ICONS = path.join(ROOT, 'libraries/@mattermost/calls-native/ios/Resources');
+const MATTERMOST_CALLKIT_ICON_SHA256 = new Set([
+    '4da6e0fa795dbd7e52e3902409688b0911ca12231ddc6480e9724acdb94e6c09',
+    'cf10c38927d7bb1209d227065ce4c0aad2f3b8f9b3d35f8210d53dae2140f5c2',
+    'd81aafad4e465a4f8b9fbd861ad1f9a5ca9e9a45429e4892232658064ef5e6b2',
+]);
 
 // Native splash colors (android/app/src/main/res/values*/colors.xml splashscreen_bg)
 const SPLASH_BG_LIGHT = 'ffffff';
@@ -144,6 +153,23 @@ describe('BokengiGp branding', () => {
             const opaque = dark ? SPLASH_BG_DARK : `${SPLASH_BG_LIGHT}ff`;
             expect({file, colors: [...readPngColors(path.join(OVERRIDE, file))]}).toEqual({file, colors: [opaque]});
         }
+    });
+
+    it('should ship the BokengiGp CallKit icon as a white template image', () => {
+        const icons = fs.readdirSync(CALLKIT_ICONS).filter((f) => f.endsWith('.png')).sort();
+
+        expect(icons).toEqual(['MMCallKitIcon.png', 'MMCallKitIcon@2x.png', 'MMCallKitIcon@3x.png']);
+        icons.forEach((file, index) => {
+            const iconPath = path.join(CALLKIT_ICONS, file);
+            const size = 40 * (index + 1);
+            const sha = crypto.createHash('sha256').update(fs.readFileSync(iconPath)).digest('hex');
+            const visibleColors = [...readPngColors(iconPath)].filter((color) => !color.endsWith('00'));
+
+            expect({file, ...readPngHeader(iconPath)}).toEqual({file, width: size, height: size, colorType: PNG_COLOR_TYPE_RGBA});
+            expect(MATTERMOST_CALLKIT_ICON_SHA256.has(sha)).toBe(false);
+            expect(visibleColors.length).toBeGreaterThan(0);
+            expect(visibleColors.filter((color) => !color.startsWith('ffffff'))).toEqual([]);
+        });
     });
 
     it.each(['en', 'fr'])('should brand the %s strings while keeping the Mattermost attribution', (locale) => {
