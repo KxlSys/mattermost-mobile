@@ -1,0 +1,18 @@
+{
+  "about.mattermost": "BokengiGp",
+  "extension.no_memberships.description": "Pour partager du contenu, vous devez être membre d'une équipe sur un serveur BokengiGp.",
+  "extension.no_servers.description": "Pour partager du contenu, vous devez être connecté à un serveur BokengiGp.",
+  "invite_people_to_team.message": "Voici un lien pour collaborer et communiquer avec nous sur BokengiGp.",
+  "mobile.calls_mic_error": "Pour participer, ouvrez les paramètres pour autoriser BokengiGp à accéder à votre micro.",
+  "mobile.calls.foreground_service.channel_name": "Appels BokengiGp",
+  "mobile.calls.foreground_service.title": "BokengiGp",
+  "mobile.ios.plist.NSBluetoothAlwaysUsageDescription": "Autoriser l'accès Bluetooth signifie que vous pouvez synchroniser du contenu entre les appareils et clients BokengiGp.",
+  "mobile.ios.plist.NSBluetoothPeripheralUsageDescription": "Autoriser l'accès Bluetooth signifie que vous pouvez connecter des périphériques audio pour vos appels, et synchroniser du contenu entre les appareils et clients BokengiGp.",
+  "mobile.managed.not_secured.android": "Cet appareil doit être sécurisé avec un verrouillage d'écran pour pouvoir utiliser BokengiGp.",
+  "mobile.managed.not_secured.ios": "Cet appareil doit être sécurisé avec un code pour pouvoir utiliser BokengiGp.\n\nAllez dans Réglages > Face ID et code.",
+  "mobile.server_upgrade.description": "\nUne mise à niveau du serveur est requise pour utiliser l'application BokengiGp. Veuillez contacter votre administrateur système pour en savoir plus.\n",
+  "onboaring.welcome_description": "BokengiGp est une plateforme de collaboration souveraine conçue pour les environnements opérationnels et une sécurité sans compromis.",
+  "rate.title": "Vous aimez BokengiGp ?",
+  "settings.notice_text": "BokengiGp par Bokengi Group — basé sur Mattermost. Rendu possible grâce aux logiciels open source utilisés dans le {platform} et les {mobile} Mattermost.",
+  "share_extension.channel_error": "Vous n'êtes pas encore membre d'une équipe sur le serveur sélectionné. Sélectionnez un autre serveur ou ouvrez BokengiGp pour rejoindre une équipe."
+}

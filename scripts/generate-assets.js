@@ -82,6 +82,17 @@ function leftMergeDirs(rootA, rootB, dest, path) {
             }
         }
     }
+
+    // Files that only exist in the override (e.g. extra branded images) are copied as-is
+    if (fs.existsSync(pathB)) {
+        for (const file of fs.readdirSync(pathB)) {
+            const filePathB = pathB + file;
+            if (!fs.existsSync(pathA + file) && fs.statSync(filePathB).isFile()) {
+                console.log('Copying ' + filePathB + ' from override only to ' + dest + path + file);
+                fs.copyFileSync(filePathB, dest + path + file);
+            }
+        }
+    }
 }
 
 const rmdir = (path) => {

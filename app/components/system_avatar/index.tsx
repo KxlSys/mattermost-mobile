@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import CompassIcon from '@components/compass_icon';
+import BrandLogo from '@components/brand_logo';
 import {View as ViewConstants} from '@constants';
 
 type Props = {
@@ -12,10 +12,10 @@ type Props = {
 
 const SystemAvatar = ({theme}: Props) => {
     return (
-        <CompassIcon
-            name='mattermost'
-            color={theme.centerChannelColor}
+        <BrandLogo
             size={ViewConstants.PROFILE_PICTURE_SIZE}
+            testID='system_avatar.logo'
+            theme={theme}
         />
     );
 };

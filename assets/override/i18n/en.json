@@ -1,0 +1,17 @@
+{
+  "about.mattermost": "BokengiGp",
+  "extension.no_memberships.description": "To share content, you'll need to be a member of a team on a BokengiGp server.",
+  "extension.no_servers.description": "To share content, you'll need to be logged in to a BokengiGp server.",
+  "invite_people_to_team.message": "Here’s a link to collaborate and communicate with us on BokengiGp.",
+  "mobile.calls_mic_error": "To participate, open Settings to grant BokengiGp access to your microphone.",
+  "mobile.calls.foreground_service.channel_name": "BokengiGp Calls",
+  "mobile.calls.foreground_service.title": "BokengiGp",
+  "mobile.managed.not_secured.android": "This device must be secured with a screen lock to use BokengiGp.",
+  "mobile.managed.not_secured.ios": "This device must be secured with biometrics or passcode to use BokengiGp.\n\nGo to Settings > Face ID & Passcode.",
+  "mobile.server_upgrade.description": "\nA server upgrade is required to use the BokengiGp app. Please ask your System Administrator for details.\n",
+  "onboaring.welcome_description": "BokengiGp is a sovereign collaboration platform built for operational environments and uncompromising security.",
+  "rate.title": "Enjoying BokengiGp?",
+  "settings.about.powered_by": "{site} is based on Mattermost",
+  "settings.notice_text": "BokengiGp by Bokengi Group — based on Mattermost. Made possible by the open source software used in the Mattermost {platform} and {mobile}.",
+  "share_extension.channel_error": "You are not a member of a team on the selected server. Select another server or open BokengiGp to join a team."
+}

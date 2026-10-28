@@ -1,4 +1,5 @@
 assets/override
+!assets/override
 dist
 build-ios
 *.zip

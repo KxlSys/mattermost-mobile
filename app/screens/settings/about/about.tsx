@@ -9,8 +9,8 @@ import {Text, View} from 'react-native';
 
 import {getLicenseLoadMetric} from '@actions/remote/license';
 import Config from '@assets/config.json';
+import BrandLogo from '@components/brand_logo';
 import Button from '@components/button';
-import CompassIcon from '@components/compass_icon';
 import FormattedText from '@components/formatted_text';
 import SettingContainer from '@components/settings/container';
 import {Screens} from '@constants';
@@ -209,11 +209,10 @@ const About = ({config, license}: AboutProps) => {
         <SettingContainer testID='about'>
             <View style={isTablet ? styles.tabletContentWrapper : undefined}>
                 <View style={styles.logoContainer}>
-                    <CompassIcon
-                        color={theme.centerChannelColor}
-                        name='mattermost'
+                    <BrandLogo
                         size={80}
                         testID='about.logo'
+                        theme={theme}
                     />
                     <Title
                         config={config}

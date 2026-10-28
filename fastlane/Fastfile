@@ -436,7 +436,7 @@ platform :ios do
   lane :unsigned do
     UI.success('Building unsigned iOS app')
 
-    ENV['APP_NAME'] = 'Mattermost'
+    ENV['APP_NAME'] ||= 'BokengiGp'
     ENV['REPLACE_ASSETS'] = 'true'
     ENV['BUILD_FOR_RELEASE'] = 'true'
     ENV['APP_SCHEME'] = 'mattermost'
@@ -795,7 +795,7 @@ platform :ios do
     root_dir = Dir[File.expand_path('..')].first
     ios_build_dir = "#{root_dir}/ios/Build/Products"
 
-    ENV['APP_NAME'] = 'Mattermost'
+    ENV['APP_NAME'] ||= 'BokengiGp'
     ENV['REPLACE_ASSETS'] = 'true'
     ENV['BUILD_FOR_RELEASE'] = 'true'
     ENV['APP_SCHEME'] = 'mattermost'
@@ -833,7 +833,7 @@ platform :android do
   lane :unsigned do
     UI.success('Building unsigned Android app')
 
-    ENV['APP_NAME'] = 'Mattermost'
+    ENV['APP_NAME'] ||= 'BokengiGp'
     ENV['REPLACE_ASSETS'] = 'true'
     ENV['BUILD_FOR_RELEASE'] = 'true'
     ENV['APP_SCHEME'] = 'mattermost'
