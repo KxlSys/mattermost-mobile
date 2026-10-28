@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       source_sha:
-        description: "Commit to build (must belong to fix/mobile-media-rendering-p0-p2)"
+        description: "Commit to build (must belong to rebrand/bokengigp)"
         required: true
-        default: "bc00526e60ce7d27d86d0c03cad18b426b4da915"
+        default: "697e2614ffd55f61121f5f04cd1a15b2e2f1b331"
         type: string
 
 permissions:
@@ -19,7 +19,7 @@ permissions:
 env:
   TERM: xterm
   INTUNE_ENABLED: 'false'
-  SOURCE_BRANCH: fix/mobile-media-rendering-p0-p2
+  SOURCE_BRANCH: rebrand/bokengigp
 
 jobs:
   build-ios-unsigned:
@@ -67,6 +67,9 @@ jobs:
 
       - name: ci/build-ios-unsigned
         run: bundle exec fastlane ios unsigned
+        env:
+          # Register mmauthbeta, the SSO callback scheme used by the com.mattermost.rnbeta bundle (isBetaApp)
+          BETA_BUILD: 'true'
         working-directory: ./fastlane
 
       - name: ci/package-sideload-ipa
