@@ -1,0 +1,107 @@
+---
+name: build-ios-unsigned-validation
+
+# Manual-only build of an unsigned iOS IPA for device validation (sideload).
+# Reuses the official `fastlane ios unsigned` lane (same as github-release.yml)
+# without any secret: no SSH deploy key, no Intune, no signing, no upload.
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: "Commit to build (must belong to fix/mobile-media-rendering-p0-p2)"
+        required: true
+        default: "bc00526e60ce7d27d86d0c03cad18b426b4da915"
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  TERM: xterm
+  INTUNE_ENABLED: 'false'
+  SOURCE_BRANCH: fix/mobile-media-rendering-p0-p2
+
+jobs:
+  build-ios-unsigned:
+    runs-on: macos-26
+    timeout-minutes: 120
+    steps:
+      - name: ci/checkout-repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+
+      - name: ci/verify-source-commit
+        run: |
+          HEAD_SHA=$(git rev-parse HEAD)
+          echo "Building commit: ${HEAD_SHA}"
+          git log -1 --oneline
+          if [ "${HEAD_SHA}" != "${{ inputs.source_sha }}" ]; then
+            echo "::error::Checked out ${HEAD_SHA}, expected ${{ inputs.source_sha }}"
+            exit 1
+          fi
+          git fetch origin "${SOURCE_BRANCH}"
+          if ! git merge-base --is-ancestor "${HEAD_SHA}" "origin/${SOURCE_BRANCH}"; then
+            echo "::error::${HEAD_SHA} is not on ${SOURCE_BRANCH}"
+            exit 1
+          fi
+
+      - name: ci/prepare-ios-build
+        uses: ./.github/actions/prepare-ios-build
+        with:
+          intune-enabled: 'false'
+
+      - name: ci/toolchain-versions
+        run: |
+          {
+            echo "Runner: ${ImageOS:-unknown} ${ImageVersion:-} ($(uname -m))"
+            echo "macOS: $(sw_vers -productVersion)"
+            echo "Xcode: $(xcodebuild -version | tr '\n' ' ')"
+            echo "Node: $(node --version)"
+            echo "npm: $(npm --version)"
+            echo "Ruby: $(ruby --version)"
+            echo "CocoaPods: $(bundle exec pod --version)"
+            echo "Fastlane: $(cd fastlane && bundle exec fastlane --version | grep -Eo 'fastlane [0-9.]+' | tail -1)"
+          } | tee toolchain.txt
+
+      - name: ci/build-ios-unsigned
+        run: bundle exec fastlane ios unsigned
+        working-directory: ./fastlane
+
+      - name: ci/package-sideload-ipa
+        # The lane zips Mattermost.app at the archive root; sideload tools expect
+        # the standard Payload/Mattermost.app layout, so repackage a copy.
+        run: |
+          set -euo pipefail
+          WORK=$(mktemp -d)
+          unzip -q Mattermost-unsigned.ipa -d "${WORK}"
+          mkdir -p "${WORK}/Payload"
+          mv "${WORK}/Mattermost.app" "${WORK}/Payload/"
+          (cd "${WORK}" && zip -qry "${GITHUB_WORKSPACE}/Mattermost-unsigned-sideload.ipa" Payload)
+          PLIST="${WORK}/Payload/Mattermost.app/Info.plist"
+          {
+            cat toolchain.txt
+            echo "Commit: $(git rev-parse HEAD)"
+            echo "Version: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${PLIST}")"
+            echo "Build: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${PLIST}")"
+            echo "Bundle ID: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${PLIST}")"
+            echo "Signed: $(codesign -dv "${WORK}/Payload/Mattermost.app" >/dev/null 2>&1 && echo yes || echo no)"
+            for f in Mattermost-unsigned.ipa Mattermost-unsigned-sideload.ipa; do
+              echo "${f}: $(stat -f%z "${f}") bytes"
+            done
+          } | tee build-info.txt
+          shasum -a 256 Mattermost-unsigned.ipa Mattermost-unsigned-sideload.ipa | tee SHA256SUMS.txt
+          cat build-info.txt SHA256SUMS.txt >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: ci/upload-ios-unsigned
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mattermost-ios-unsigned-${{ inputs.source_sha }}
+          path: |
+            Mattermost-unsigned.ipa
+            Mattermost-unsigned-sideload.ipa
+            SHA256SUMS.txt
+            build-info.txt
+          if-no-files-found: error
+          retention-days: 14
